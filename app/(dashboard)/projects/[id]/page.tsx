@@ -99,6 +99,7 @@ export default function ProjectDetailsPage() {
   const [activeTab, setActiveTab] = useState<"batches" | "analytics">("batches");
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
 
   const fetchProject = useCallback(async () => {
     try {
@@ -121,14 +122,17 @@ export default function ProjectDetailsPage() {
 
   const fetchAnalytics = useCallback(async () => {
     setAnalyticsLoading(true);
+    setAnalyticsError(null);
     try {
       const response = await fetch(`/api/projects/${projectId}/analytics`);
       const data = await response.json();
       if (data.success) {
         setAnalytics(data.data);
+      } else {
+        setAnalyticsError(data.error || "Failed to load analytics");
       }
     } catch {
-      // silently fail
+      setAnalyticsError("Failed to load analytics");
     }
     setAnalyticsLoading(false);
   }, [projectId]);
@@ -283,9 +287,11 @@ export default function ProjectDetailsPage() {
           ...project,
           code_batches: project.code_batches.filter((b) => b.id !== batchId),
         });
+      } else if (!data.success) {
+        setError(data.error || "Failed to delete batch");
       }
     } catch {
-      // silently fail
+      setError("Failed to delete batch");
     }
     setDeletingBatchId(null);
   };
@@ -396,10 +402,14 @@ export default function ProjectDetailsPage() {
                 min={1}
                 max={100}
                 value={project.low_code_threshold}
-                onChange={async (e) => {
+                onChange={(e) => {
                   const val = parseInt(e.target.value, 10);
                   if (isNaN(val) || val < 1) return;
                   setProject({ ...project, low_code_threshold: val });
+                }}
+                onBlur={async (e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (isNaN(val) || val < 1) return;
                   await fetch(`/api/projects/${projectId}`, {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
@@ -654,6 +664,13 @@ export default function ProjectDetailsPage() {
             {analyticsLoading ? (
               <div className="flex items-center justify-center h-48">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600" />
+              </div>
+            ) : analyticsError ? (
+              <div className="text-center py-12">
+                <p className="text-red-500 mb-2">{analyticsError}</p>
+                <button onClick={fetchAnalytics} className="text-brand-600 hover:underline text-sm">
+                  Try again
+                </button>
               </div>
             ) : !analytics ? (
               <p className="text-center text-gray-500 py-12">No analytics data available</p>

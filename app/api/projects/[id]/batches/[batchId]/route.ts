@@ -53,9 +53,16 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
   // Soft delete child codes
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase.from("codes") as any)
+  const { error: codesError } = await (supabase.from("codes") as any)
     .update({ deleted_at: new Date().toISOString() })
     .eq("batch_id", batchId);
+
+  if (codesError) {
+    return NextResponse.json(
+      { success: false, error: "Batch deleted but codes may still be active", code: "PARTIAL_DELETE" },
+      { status: 207 }
+    );
+  }
 
   return NextResponse.json({ success: true, data: { deleted: true } });
 }
