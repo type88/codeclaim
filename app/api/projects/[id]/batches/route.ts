@@ -143,10 +143,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     );
   }
 
-  // Insert codes
-  const codeRecords = codes.map((codeValue: string) => ({
+  // Insert codes - reserve the first code for the developer
+  const codeRecords = codes.map((codeValue: string, index: number) => ({
     batch_id: batch.id,
     code_value: codeValue.trim(),
+    is_developer_reserved: index === 0,
   }));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

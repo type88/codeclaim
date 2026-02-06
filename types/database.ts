@@ -79,6 +79,7 @@ export interface Database {
           icon_url: string | null;
           is_active: boolean;
           allow_multiple_redemptions: boolean;
+          require_auth: boolean;
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
@@ -93,6 +94,7 @@ export interface Database {
           icon_url?: string | null;
           is_active?: boolean;
           allow_multiple_redemptions?: boolean;
+          require_auth?: boolean;
           created_at?: string;
           updated_at?: string;
           deleted_at?: string | null;
@@ -107,6 +109,7 @@ export interface Database {
           icon_url?: string | null;
           is_active?: boolean;
           allow_multiple_redemptions?: boolean;
+          require_auth?: boolean;
           created_at?: string;
           updated_at?: string;
           deleted_at?: string | null;
@@ -200,6 +203,8 @@ export interface Database {
           redeemer_ip_hash: string | null;
           redeemer_platform: string | null;
           redeemer_user_agent: string | null;
+          redeemer_auth_user_id: string | null;
+          is_developer_reserved: boolean;
           created_at: string;
         };
         Insert: {
@@ -212,6 +217,8 @@ export interface Database {
           redeemer_ip_hash?: string | null;
           redeemer_platform?: string | null;
           redeemer_user_agent?: string | null;
+          redeemer_auth_user_id?: string | null;
+          is_developer_reserved?: boolean;
           created_at?: string;
         };
         Update: {
@@ -224,6 +231,8 @@ export interface Database {
           redeemer_ip_hash?: string | null;
           redeemer_platform?: string | null;
           redeemer_user_agent?: string | null;
+          redeemer_auth_user_id?: string | null;
+          is_developer_reserved?: boolean;
           created_at?: string;
         };
         Relationships: [
@@ -334,6 +343,8 @@ export interface Database {
           p_platform: Database["public"]["Enums"]["platform_type"];
           p_fingerprint?: string;
           p_user_agent?: string;
+          p_ip_hash?: string;
+          p_auth_user_id?: string;
         };
         Returns: {
           success: boolean;

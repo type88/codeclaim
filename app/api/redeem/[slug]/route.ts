@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import type { PlatformType } from "@/types/database";
 
@@ -38,6 +39,10 @@ function detectPlatform(userAgent: string): PlatformType | null {
   return null;
 }
 
+function hashIP(ip: string): string {
+  return createHash("sha256").update(ip).digest("hex");
+}
+
 // POST /api/redeem/[slug] - Redeem a code for a project
 export async function POST(request: NextRequest, { params }: RouteParams) {
   const { slug } = await params;
@@ -55,8 +60,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     fingerprint?: string;
   };
 
-  // Get user agent
+  // Get user agent and IP
   const userAgent = request.headers.get("user-agent") || "";
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  const ip = forwardedFor?.split(",")[0]?.trim() || "unknown";
+  const ipHash = hashIP(ip);
+
+  // Check if user is authenticated (for projects that require auth)
+  const { data: { user } } = await supabase.auth.getUser();
+  const authUserId = user?.id || null;
 
   // Detect platform if not provided
   const detectedPlatform = detectPlatform(userAgent);
@@ -94,6 +106,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     p_platform: platform,
     p_fingerprint: fingerprint || null,
     p_user_agent: userAgent,
+    p_ip_hash: ipHash,
+    p_auth_user_id: authUserId,
   });
 
   if (error) {
@@ -114,15 +128,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   const result = (data as RedeemResult[] | null)?.[0];
 
   if (!result || !result.success) {
+    const errorMessage = result?.error_message || "No codes available for this platform";
+    const isRateLimit = errorMessage.includes("Rate limit") || errorMessage.includes("Too many requests");
+    const isAuthRequired = errorMessage.includes("Authentication required");
+
     return NextResponse.json(
       {
         success: false,
-        error: result?.error_message || "No codes available for this platform",
-        code: "NO_CODES_AVAILABLE",
+        error: errorMessage,
+        code: isRateLimit ? "RATE_LIMITED" : isAuthRequired ? "AUTH_REQUIRED" : "NO_CODES_AVAILABLE",
         platform,
         detected_platform: detectedPlatform,
       },
-      { status: 404 }
+      { status: isRateLimit ? 429 : isAuthRequired ? 401 : 404 }
     );
   }
 
@@ -171,6 +189,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       slug,
       description,
       icon_url,
+      require_auth,
       code_batches (
         platform,
         total_codes,
@@ -209,6 +228,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     slug: string;
     description: string | null;
     icon_url: string | null;
+    require_auth: boolean;
     code_batches: BatchInfo[] | null;
   };
 
@@ -260,6 +280,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         description: project.description,
         icon_url: project.icon_url,
       },
+      require_auth: project.require_auth,
       platforms: platformAvailability,
       detected_platform: detectedPlatform,
       has_codes_for_detected:

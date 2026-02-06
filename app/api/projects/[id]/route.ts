@@ -62,6 +62,25 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
   const project = projectData as Record<string, unknown> & { code_batches: BatchData[] | null };
 
+  // Fetch developer-reserved codes for all batches
+  const batchIds = (project.code_batches || []).map((b: BatchData) => b.id);
+  let reservedCodeMap: Record<string, string> = {};
+  if (batchIds.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: reservedCodes } = await (supabase
+      .from("codes") as any)
+      .select("batch_id, code_value")
+      .in("batch_id", batchIds)
+      .eq("is_developer_reserved", true);
+
+    if (reservedCodes) {
+      reservedCodeMap = (reservedCodes as { batch_id: string; code_value: string }[]).reduce(
+        (acc, c) => ({ ...acc, [c.batch_id]: c.code_value }),
+        {} as Record<string, string>
+      );
+    }
+  }
+
   // Calculate stats
   const batches = project.code_batches || [];
   const totalCodes = batches.reduce((sum, b) => sum + b.total_codes, 0);
@@ -77,10 +96,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     codesByPlatform[batch.platform].used += batch.used_codes;
   });
 
+  // Enrich batches with reserved code info
+  const enrichedBatches = batches.map((b) => ({
+    ...b,
+    developer_reserved_code: reservedCodeMap[b.id] || null,
+  }));
+
   return NextResponse.json({
     success: true,
     data: {
       ...project,
+      code_batches: enrichedBatches,
       stats: {
         total_batches: batches.length,
         total_codes: totalCodes,
@@ -119,7 +145,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     );
   }
 
-  const { name, description, website_url, is_active } = body;
+  const { name, description, website_url, is_active, require_auth, low_code_threshold } = body;
 
   // Build update object (only include provided fields)
   const updates: Record<string, unknown> = {};
@@ -127,6 +153,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (description !== undefined) updates.description = description;
   if (website_url !== undefined) updates.website_url = website_url;
   if (is_active !== undefined) updates.is_active = is_active;
+  if (require_auth !== undefined) updates.require_auth = require_auth;
+  if (low_code_threshold !== undefined) updates.low_code_threshold = low_code_threshold;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json(

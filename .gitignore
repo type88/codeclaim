@@ -50,3 +50,7 @@ supabase/.temp
 
 # Firebase
 firebase-debug.log
+
+# Apple auth keys
+*.p8
+generate-apple-secret.mjs
