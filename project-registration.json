@@ -1,8 +1,8 @@
 {
-  "name": "CodeDrop",
-  "slug": "codedrop",
+  "name": "SudoGrab",
+  "slug": "sudograb",
   "one_liner": "A platform where developers upload bulk promo codes and users get the right code automatically based on their platform, with real-time tracking of used vs unused codes.",
-  "domain": "codedrop.dev",
+  "domain": "sudograb.com",
   "genesis_date": "2025-01-27",
   "platforms": ["web", "ios", "android"],
   "tech_stack": "Next.js + Supabase + React Native",

@@ -118,7 +118,7 @@ export default function NewProjectPage() {
             </label>
             <div className="flex items-center">
               <span className="px-3 py-2 bg-gray-100 dark:bg-gray-600 border border-r-0 border-gray-300 dark:border-gray-600 rounded-l-md text-gray-500 dark:text-gray-400 text-sm">
-                codeclaim.io/redeem/
+                sudograb.com/redeem/
               </span>
               <input
                 id="slug"

@@ -266,7 +266,7 @@ export default function RedeemPage() {
       <nav className="border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-3xl mx-auto px-4 py-4">
           <Link href="/" className="text-xl font-bold text-brand-600">
-            CodeClaim
+            SudoGrab
           </Link>
         </div>
       </nav>
@@ -503,7 +503,7 @@ export default function RedeemPage() {
         <div className="max-w-3xl mx-auto px-4 text-center text-sm text-gray-500">
           Powered by{" "}
           <Link href="/" className="text-brand-600 hover:underline">
-            CodeClaim
+            SudoGrab
           </Link>
         </div>
       </footer>

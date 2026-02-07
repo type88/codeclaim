@@ -1,4 +1,4 @@
--- CodeDrop Platform: Seed Data
+-- SudoGrab Platform: Seed Data
 -- Description: Sample data for development and testing
 -- Note: This requires an authenticated user to exist in auth.users first
 

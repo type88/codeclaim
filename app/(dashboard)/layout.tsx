@@ -32,7 +32,7 @@ export default async function DashboardLayout({
           {/* Logo */}
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <Link href="/dashboard" className="text-xl font-bold text-brand-600">
-              CodeClaim
+              SudoGrab
             </Link>
           </div>
 

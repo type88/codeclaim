@@ -8,9 +8,35 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "CodeClaim - Promo Code Distribution Platform",
+  title: {
+    default: "SudoGrab - Promo Code Distribution for Developers",
+    template: "%s | SudoGrab",
+  },
   description:
-    "Upload bulk promo codes and let users get the right code automatically based on their platform.",
+    "Upload bulk promo codes, share one link, and let users grab the right code for their platform. Real-time tracking for app and game developers.",
+  metadataBase: new URL("https://sudograb.com"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "SudoGrab - Promo Code Distribution for Developers",
+    description:
+      "Upload bulk promo codes, share one link, and let users grab the right code for their platform.",
+    url: "https://sudograb.com",
+    siteName: "SudoGrab",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary",
+    title: "SudoGrab - Promo Code Distribution for Developers",
+    description:
+      "Upload bulk promo codes, share one link, and let users grab the right code for their platform.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
