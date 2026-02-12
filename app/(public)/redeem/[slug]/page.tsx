@@ -121,6 +121,7 @@ export default function RedeemPage() {
   const [socialProof, setSocialProof] = useState<SocialProof | null>(null);
   const [expired, setExpired] = useState(false);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [retainEmail, setRetainEmail] = useState(false);
 
   const accentColor = project?.theme_color || "#6366f1";
 
@@ -148,6 +149,7 @@ export default function RedeemPage() {
         setExpired(data.data.expired || false);
         setExpiresAt(data.data.expires_at || null);
         setEnableBundles(data.data.enable_bundles || false);
+        setRetainEmail(data.data.retain_redeemer_email || false);
 
         if (data.data.detected_platform && data.data.has_codes_for_detected) {
           if (data.data.enable_bundles) {
@@ -452,7 +454,9 @@ export default function RedeemPage() {
                   </div>
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Sign in to get your code</h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Sign in to verify you&apos;re human. We delete your data within 24 hours.
+                    {retainEmail
+                      ? "Sign in to verify you\u2019re human."
+                      : "Sign in to verify you\u2019re human. We delete your data within 24 hours."}
                   </p>
                   <div className="space-y-3 pt-2">
                     <button
@@ -516,9 +520,11 @@ export default function RedeemPage() {
               <p className="text-sm text-gray-500">
                 Redeem each code in its respective platform app.
               </p>
-              <p className="mt-2 text-xs text-gray-400">
-                Your identifying information is automatically removed after 24 hours.
-              </p>
+              {!retainEmail && (
+                <p className="mt-2 text-xs text-gray-400">
+                  Your identifying information is automatically removed after 24 hours.
+                </p>
+              )}
             </div>
           ) : redeemedCode ? (
             /* Single Code Success */
@@ -578,9 +584,11 @@ export default function RedeemPage() {
                     : "Click the button above to redeem automatically"
                   : `Redeem this code in the ${platformLabels[selectedPlatform!]} app`}
               </p>
-              <p className="mt-2 text-xs text-gray-400">
-                Your identifying information is automatically removed after 24 hours.
-              </p>
+              {!retainEmail && (
+                <p className="mt-2 text-xs text-gray-400">
+                  Your identifying information is automatically removed after 24 hours.
+                </p>
+              )}
             </div>
           ) : (
             <>

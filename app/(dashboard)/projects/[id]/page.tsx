@@ -34,6 +34,7 @@ interface Project {
   notify_on_milestones: boolean;
   // Bundles
   enable_bundles: boolean;
+  retain_redeemer_email: boolean;
   created_at: string;
   stats: {
     total_batches: number;
@@ -117,10 +118,12 @@ export default function ProjectDetailsPage() {
   const [inputMode, setInputMode] = useState<"text" | "file">("text");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [deletingBatchId, setDeletingBatchId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"batches" | "analytics" | "promotional" | "webhooks" | "share">("batches");
+  const [activeTab, setActiveTab] = useState<"batches" | "analytics" | "promotional" | "webhooks" | "share" | "redeemers">("batches");
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const [redeemers, setRedeemers] = useState<{ email: string; platform: string; redeemed_at: string }[] | null>(null);
+  const [redeemersLoading, setRedeemersLoading] = useState(false);
 
   const fetchProject = useCallback(async () => {
     try {
@@ -168,6 +171,26 @@ export default function ProjectDetailsPage() {
       fetchAnalytics();
     }
   }, [activeTab, analytics, fetchAnalytics]);
+
+  const fetchRedeemers = useCallback(async () => {
+    setRedeemersLoading(true);
+    try {
+      const response = await fetch(`/api/projects/${projectId}/redeemers`);
+      const data = await response.json();
+      if (data.success) {
+        setRedeemers(data.data);
+      }
+    } catch {
+      // silently fail
+    }
+    setRedeemersLoading(false);
+  }, [projectId]);
+
+  useEffect(() => {
+    if (activeTab === "redeemers" && !redeemers) {
+      fetchRedeemers();
+    }
+  }, [activeTab, redeemers, fetchRedeemers]);
 
   // Real-time updates for code redemptions
   const { isConnected: isRealtimeConnected } = useProjectRealtime(projectId, fetchProject);
@@ -620,6 +643,18 @@ export default function ProjectDetailsPage() {
           >
             Share
           </button>
+          {project.retain_redeemer_email && (
+            <button
+              onClick={() => setActiveTab("redeemers")}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "redeemers"
+                  ? "border-brand-600 text-brand-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              }`}
+            >
+              Redeemers
+            </button>
+          )}
         </div>
 
         {activeTab === "batches" && (
@@ -856,6 +891,71 @@ export default function ProjectDetailsPage() {
         {activeTab === "share" && (
           <ShareSettings projectId={project.id} slug={project.slug} themeColor={project.theme_color} />
         )}
+        {activeTab === "redeemers" && (
+          <div className="p-6">
+            {redeemersLoading ? (
+              <div className="flex items-center justify-center h-48">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600" />
+              </div>
+            ) : !redeemers || redeemers.length === 0 ? (
+              <div className="text-center py-12">
+                <svg className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <p className="text-gray-500">No redeemer emails captured yet.</p>
+                <p className="text-sm text-gray-400 mt-1">Emails appear here after authenticated users redeem codes.</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {redeemers.length} redeemer{redeemers.length !== 1 ? "s" : ""}
+                  </h3>
+                  <button
+                    onClick={() => {
+                      const csv = ["Email,Platform,Redeemed At", ...redeemers.map(r => `${r.email},${r.platform},${r.redeemed_at}`)].join("\n");
+                      const blob = new Blob([csv], { type: "text/csv" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `redeemers-${project.slug}.csv`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Export CSV
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-500 border-b border-gray-200 dark:border-gray-700">
+                        <th className="pb-2 font-medium">Email</th>
+                        <th className="pb-2 font-medium">Platform</th>
+                        <th className="pb-2 font-medium">Redeemed</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                      {redeemers.map((r, i) => (
+                        <tr key={i}>
+                          <td className="py-2 text-gray-900 dark:text-white">{r.email}</td>
+                          <td className="py-2 text-gray-600 dark:text-gray-300">
+                            {platformLabels[r.platform] || r.platform}
+                          </td>
+                          <td className="py-2 text-gray-500">{getRelativeTime(r.redeemed_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        )}
         {activeTab === "promotional" && (
           <PromotionalSettings
             projectId={project.id}
@@ -874,6 +974,7 @@ export default function ProjectDetailsPage() {
               notify_on_batch_empty: project.notify_on_batch_empty ?? true,
               notify_on_milestones: project.notify_on_milestones ?? true,
               enable_bundles: project.enable_bundles ?? false,
+              retain_redeemer_email: project.retain_redeemer_email ?? false,
             }}
             onSaved={fetchProject}
           />

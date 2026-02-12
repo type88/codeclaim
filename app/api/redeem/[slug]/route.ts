@@ -85,6 +85,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   // Check if user is authenticated (for projects that require auth)
   const { data: { user } } = await supabase.auth.getUser();
   const authUserId = user?.id || null;
+  const userEmail = user?.email || null;
 
   // Detect platform if not provided
   const detectedPlatform = detectPlatform(userAgent);
@@ -124,6 +125,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     p_user_agent: userAgent,
     p_ip_hash: ipHash,
     p_auth_user_id: authUserId,
+    p_redeemer_email: userEmail,
   });
 
   if (error) {
@@ -236,6 +238,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       theme_color,
       expires_at,
       enable_bundles,
+      retain_redeemer_email,
       code_batches (
         platform,
         total_codes,
@@ -285,6 +288,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     theme_color: string | null;
     expires_at: string | null;
     enable_bundles: boolean;
+    retain_redeemer_email: boolean;
     code_batches: BatchInfo[] | null;
   };
 
@@ -388,6 +392,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       has_codes_for_detected:
         detectedPlatform && platformAvailability[detectedPlatform]?.available,
       enable_bundles: project.enable_bundles ?? false,
+      retain_redeemer_email: project.retain_redeemer_email ?? false,
     },
   });
 }

@@ -41,6 +41,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
   const { data: { user } } = await supabase.auth.getUser();
   const authUserId = user?.id || null;
+  const userEmail = user?.email || null;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any).rpc("redeem_bundle", {
@@ -50,6 +51,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     p_user_agent: userAgent,
     p_ip_hash: ipHash,
     p_auth_user_id: authUserId,
+    p_redeemer_email: userEmail,
   });
 
   if (error) {
