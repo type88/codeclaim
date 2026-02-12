@@ -60,6 +60,22 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     fingerprint?: string;
   };
 
+  // Check project-level expiration before processing
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: projectCheck } = await (supabase.from("projects") as any)
+    .select("id, expires_at")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .is("deleted_at", null)
+    .single();
+
+  if (projectCheck?.expires_at && new Date(projectCheck.expires_at) < new Date()) {
+    return NextResponse.json(
+      { success: false, error: "This campaign has ended", code: "CAMPAIGN_EXPIRED" },
+      { status: 410 }
+    );
+  }
+
   // Get user agent and IP
   const userAgent = request.headers.get("user-agent") || "";
   const forwardedFor = request.headers.get("x-forwarded-for");
@@ -161,6 +177,26 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
   const batch = codeData?.code_batches as { app_store_id?: string; play_store_package?: string; steam_app_id?: string } | null;
 
+  // Fire webhook asynchronously (don't block the response)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (supabaseUrl) {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (serviceKey) {
+      fetch(`${supabaseUrl}/functions/v1/send-webhook`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({
+          project_id: projectCheck?.id,
+          event_type: "code_redeemed",
+          payload: { platform, slug },
+        }),
+      }).catch(() => {});
+    }
+  }
+
   return NextResponse.json({
     success: true,
     data: {
@@ -190,6 +226,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       description,
       icon_url,
       require_auth,
+      hero_image_url,
+      promo_headline,
+      promo_description,
+      cta_text,
+      show_social_proof,
+      social_proof_style,
+      developer_logo_url,
+      theme_color,
+      expires_at,
+      enable_bundles,
       code_batches (
         platform,
         total_codes,
@@ -229,6 +275,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     description: string | null;
     icon_url: string | null;
     require_auth: boolean;
+    hero_image_url: string | null;
+    promo_headline: string | null;
+    promo_description: string | null;
+    cta_text: string | null;
+    show_social_proof: boolean;
+    social_proof_style: string;
+    developer_logo_url: string | null;
+    theme_color: string | null;
+    expires_at: string | null;
+    enable_bundles: boolean;
     code_batches: BatchInfo[] | null;
   };
 
@@ -267,6 +323,37 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
   });
 
+  // Check project-level expiration
+  if (project.expires_at && new Date(project.expires_at) < new Date()) {
+    return NextResponse.json({
+      success: true,
+      data: {
+        project: {
+          name: project.name,
+          slug: project.slug,
+          description: project.description,
+          icon_url: project.icon_url,
+          hero_image_url: project.hero_image_url,
+          promo_headline: project.promo_headline,
+          promo_description: project.promo_description,
+          developer_logo_url: project.developer_logo_url,
+          theme_color: project.theme_color,
+        },
+        expired: true,
+        expires_at: project.expires_at,
+        require_auth: project.require_auth,
+        platforms: {},
+        detected_platform: null,
+        has_codes_for_detected: false,
+      },
+    });
+  }
+
+  // Calculate social proof stats
+  const totalCodes = batches.reduce((sum, b) => sum + b.total_codes, 0);
+  const usedCodes = batches.reduce((sum, b) => sum + b.used_codes, 0);
+  const availableCodes = totalCodes - usedCodes;
+
   // Detect user's platform
   const userAgent = request.headers.get("user-agent") || "";
   const detectedPlatform = detectPlatform(userAgent);
@@ -279,12 +366,28 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         slug: project.slug,
         description: project.description,
         icon_url: project.icon_url,
+        hero_image_url: project.hero_image_url,
+        promo_headline: project.promo_headline,
+        promo_description: project.promo_description,
+        cta_text: project.cta_text,
+        show_social_proof: project.show_social_proof,
+        social_proof_style: project.social_proof_style,
+        developer_logo_url: project.developer_logo_url,
+        theme_color: project.theme_color,
       },
+      social_proof: {
+        total_codes: totalCodes,
+        used_codes: usedCodes,
+        available_codes: availableCodes,
+      },
+      expired: false,
+      expires_at: project.expires_at,
       require_auth: project.require_auth,
       platforms: platformAvailability,
       detected_platform: detectedPlatform,
       has_codes_for_detected:
         detectedPlatform && platformAvailability[detectedPlatform]?.available,
+      enable_bundles: project.enable_bundles ?? false,
     },
   });
 }

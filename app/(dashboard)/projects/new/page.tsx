@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { templateList, type CampaignTemplate } from "@/lib/templates/campaign-templates";
 
 export default function NewProjectPage() {
   const router = useRouter();
@@ -13,6 +14,12 @@ export default function NewProjectPage() {
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+
+  const applyTemplate = (templateId: string, template: CampaignTemplate) => {
+    setSelectedTemplate(templateId);
+    setDescription(template.promo_description);
+  };
 
   // Auto-generate slug from name
   const handleNameChange = (value: string) => {
@@ -45,6 +52,7 @@ export default function NewProjectPage() {
           slug,
           description: description || undefined,
           website_url: websiteUrl || undefined,
+          template: selectedTemplate || undefined,
         }),
       });
 
@@ -90,6 +98,30 @@ export default function NewProjectPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Campaign Template Selector */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            Start from a template <span className="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            {templateList.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => applyTemplate(t.id, t)}
+                className={`p-3 rounded-lg border-2 text-left transition-all ${
+                  selectedTemplate === t.id
+                    ? "border-brand-600 bg-brand-50 dark:bg-brand-900/20"
+                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                }`}
+              >
+                <div className="font-medium text-sm text-gray-900 dark:text-white">{t.name}</div>
+                <div className="text-xs text-gray-500 mt-1">{t.description}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
           <div>
             <label

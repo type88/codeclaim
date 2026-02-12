@@ -145,7 +145,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     );
   }
 
-  const { name, description, website_url, is_active, require_auth, low_code_threshold } = body;
+  const {
+    name, description, website_url, is_active, require_auth, low_code_threshold,
+    // Promotional fields
+    hero_image_url, promo_headline, promo_description, cta_text,
+    show_social_proof, social_proof_style, developer_logo_url, theme_color,
+    // Expiring links
+    expires_at,
+    // Notification settings
+    email_notifications_enabled, notify_on_batch_low, notify_on_batch_empty, notify_on_milestones,
+    // Bundles
+    enable_bundles,
+  } = body;
 
   // Build update object (only include provided fields)
   const updates: Record<string, unknown> = {};
@@ -155,6 +166,24 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (is_active !== undefined) updates.is_active = is_active;
   if (require_auth !== undefined) updates.require_auth = require_auth;
   if (low_code_threshold !== undefined) updates.low_code_threshold = low_code_threshold;
+  // Promotional fields
+  if (hero_image_url !== undefined) updates.hero_image_url = hero_image_url;
+  if (promo_headline !== undefined) updates.promo_headline = promo_headline;
+  if (promo_description !== undefined) updates.promo_description = promo_description;
+  if (cta_text !== undefined) updates.cta_text = cta_text;
+  if (show_social_proof !== undefined) updates.show_social_proof = show_social_proof;
+  if (social_proof_style !== undefined) updates.social_proof_style = social_proof_style;
+  if (developer_logo_url !== undefined) updates.developer_logo_url = developer_logo_url;
+  if (theme_color !== undefined) updates.theme_color = theme_color;
+  // Expiring links
+  if (expires_at !== undefined) updates.expires_at = expires_at;
+  // Notification settings
+  if (email_notifications_enabled !== undefined) updates.email_notifications_enabled = email_notifications_enabled;
+  if (notify_on_batch_low !== undefined) updates.notify_on_batch_low = notify_on_batch_low;
+  if (notify_on_batch_empty !== undefined) updates.notify_on_batch_empty = notify_on_batch_empty;
+  if (notify_on_milestones !== undefined) updates.notify_on_milestones = notify_on_milestones;
+  // Bundles
+  if (enable_bundles !== undefined) updates.enable_bundles = enable_bundles;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json(

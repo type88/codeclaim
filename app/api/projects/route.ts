@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { campaignTemplates } from "@/lib/templates/campaign-templates";
 
 // GET /api/projects - List all projects for the authenticated developer
 export async function GET() {
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { name, slug, description, website_url } = body;
+  const { name, slug, description, website_url, template } = body;
 
   // Validate required fields
   if (!name || !slug) {
@@ -143,17 +144,30 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Build insert data, applying template fields if selected
+  const insertData: Record<string, unknown> = {
+    developer_id: developer.id,
+    name,
+    slug,
+    description: description || null,
+    website_url: website_url || null,
+  };
+
+  if (template && campaignTemplates[template]) {
+    const t = campaignTemplates[template];
+    insertData.promo_headline = t.promo_headline;
+    insertData.promo_description = t.promo_description;
+    insertData.cta_text = t.cta_text;
+    insertData.require_auth = t.require_auth;
+    insertData.show_social_proof = t.show_social_proof;
+    insertData.social_proof_style = t.social_proof_style;
+  }
+
   // Create project
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: project, error } = await (supabase
     .from("projects") as any)
-    .insert({
-      developer_id: developer.id,
-      name,
-      slug,
-      description: description || null,
-      website_url: website_url || null,
-    })
+    .insert(insertData)
     .select()
     .single();
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { NotificationBell } from "@/components/dashboard/NotificationBell";
 
 export default async function DashboardLayout({
   children,
@@ -56,6 +57,7 @@ export default async function DashboardLayout({
               </svg>
               Projects
             </Link>
+            <NotificationBell />
           </nav>
 
           {/* User Menu */}

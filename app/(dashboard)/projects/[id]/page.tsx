@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useProjectRealtime } from "@/lib/hooks/use-realtime";
+import { PromotionalSettings } from "@/components/dashboard/PromotionalSettings";
+import { WebhookSettings } from "@/components/dashboard/WebhookSettings";
+import { ShareSettings } from "@/components/dashboard/ShareSettings";
 
 interface Project {
   id: string;
@@ -13,6 +16,24 @@ interface Project {
   is_active: boolean;
   require_auth: boolean;
   low_code_threshold: number;
+  // Promotional fields
+  hero_image_url: string | null;
+  promo_headline: string | null;
+  promo_description: string | null;
+  cta_text: string | null;
+  show_social_proof: boolean;
+  social_proof_style: string;
+  developer_logo_url: string | null;
+  theme_color: string | null;
+  // Expiring links
+  expires_at: string | null;
+  // Notification settings
+  email_notifications_enabled: boolean;
+  notify_on_batch_low: boolean;
+  notify_on_batch_empty: boolean;
+  notify_on_milestones: boolean;
+  // Bundles
+  enable_bundles: boolean;
   created_at: string;
   stats: {
     total_batches: number;
@@ -96,7 +117,7 @@ export default function ProjectDetailsPage() {
   const [inputMode, setInputMode] = useState<"text" | "file">("text");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [deletingBatchId, setDeletingBatchId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"batches" | "analytics">("batches");
+  const [activeTab, setActiveTab] = useState<"batches" | "analytics" | "promotional" | "webhooks" | "share">("batches");
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
@@ -569,6 +590,36 @@ export default function ProjectDetailsPage() {
           >
             Analytics
           </button>
+          <button
+            onClick={() => setActiveTab("promotional")}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "promotional"
+                ? "border-brand-600 text-brand-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            }`}
+          >
+            Promotional
+          </button>
+          <button
+            onClick={() => setActiveTab("webhooks")}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "webhooks"
+                ? "border-brand-600 text-brand-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            }`}
+          >
+            Webhooks
+          </button>
+          <button
+            onClick={() => setActiveTab("share")}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "share"
+                ? "border-brand-600 text-brand-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            }`}
+          >
+            Share
+          </button>
         </div>
 
         {activeTab === "batches" && (
@@ -798,6 +849,34 @@ export default function ProjectDetailsPage() {
               </div>
             )}
           </div>
+        )}
+        {activeTab === "webhooks" && (
+          <WebhookSettings projectId={project.id} />
+        )}
+        {activeTab === "share" && (
+          <ShareSettings projectId={project.id} slug={project.slug} themeColor={project.theme_color} />
+        )}
+        {activeTab === "promotional" && (
+          <PromotionalSettings
+            projectId={project.id}
+            initial={{
+              hero_image_url: project.hero_image_url,
+              promo_headline: project.promo_headline,
+              promo_description: project.promo_description,
+              cta_text: project.cta_text,
+              show_social_proof: project.show_social_proof ?? true,
+              social_proof_style: project.social_proof_style ?? "claimed",
+              developer_logo_url: project.developer_logo_url,
+              theme_color: project.theme_color,
+              expires_at: project.expires_at,
+              email_notifications_enabled: project.email_notifications_enabled ?? false,
+              notify_on_batch_low: project.notify_on_batch_low ?? true,
+              notify_on_batch_empty: project.notify_on_batch_empty ?? true,
+              notify_on_milestones: project.notify_on_milestones ?? true,
+              enable_bundles: project.enable_bundles ?? false,
+            }}
+            onSaved={fetchProject}
+          />
         )}
       </div>
 
