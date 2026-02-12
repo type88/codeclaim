@@ -18,7 +18,6 @@ interface PromotionalData {
   notify_on_batch_empty: boolean;
   notify_on_milestones: boolean;
   enable_bundles: boolean;
-  retain_redeemer_email: boolean;
 }
 
 interface PromotionalSettingsProps {
@@ -272,32 +271,6 @@ export function PromotionalSettings({ projectId, initial, onSaved }: Promotional
         </div>
       </div>
 
-      {/* Retain Redeemer Emails */}
-      <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-              Retain Redeemer Emails
-            </h3>
-            <p className="text-sm text-gray-500">
-              Keep authenticated redeemer email addresses after the 24h PII purge. The &ldquo;data deleted&rdquo; disclaimer will be hidden from the redemption page.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => update("retain_redeemer_email", !data.retain_redeemer_email)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              data.retain_redeemer_email ? "bg-brand-600" : "bg-gray-200 dark:bg-gray-700"
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                data.retain_redeemer_email ? "translate-x-6" : "translate-x-1"
-              }`}
-            />
-          </button>
-        </div>
-      </div>
 
       {/* Notification Settings */}
       <div className="pt-6 border-t border-gray-200 dark:border-gray-700">

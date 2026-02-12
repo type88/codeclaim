@@ -21,6 +21,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     );
   }
 
+  // Admin-only endpoint
+  const adminUserId = process.env.NEXT_PUBLIC_ADMIN_USER_ID;
+  if (!adminUserId || user.id !== adminUserId) {
+    return NextResponse.json(
+      { success: false, error: "Forbidden", code: "FORBIDDEN" },
+      { status: 403 }
+    );
+  }
+
   // Get redeemed codes with emails for this project
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase

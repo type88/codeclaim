@@ -156,8 +156,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     email_notifications_enabled, notify_on_batch_low, notify_on_batch_empty, notify_on_milestones,
     // Bundles
     enable_bundles,
-    // Email retention
-    retain_redeemer_email,
   } = body;
 
   // Build update object (only include provided fields)
@@ -186,7 +184,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (notify_on_milestones !== undefined) updates.notify_on_milestones = notify_on_milestones;
   // Bundles
   if (enable_bundles !== undefined) updates.enable_bundles = enable_bundles;
-  if (retain_redeemer_email !== undefined) updates.retain_redeemer_email = retain_redeemer_email;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json(

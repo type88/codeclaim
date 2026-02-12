@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 import { useProjectRealtime } from "@/lib/hooks/use-realtime";
 import { PromotionalSettings } from "@/components/dashboard/PromotionalSettings";
 import { WebhookSettings } from "@/components/dashboard/WebhookSettings";
@@ -124,6 +125,7 @@ export default function ProjectDetailsPage() {
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
   const [redeemers, setRedeemers] = useState<{ email: string; platform: string; redeemed_at: string }[] | null>(null);
   const [redeemersLoading, setRedeemersLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const fetchProject = useCallback(async () => {
     try {
@@ -164,6 +166,14 @@ export default function ProjectDetailsPage() {
   useEffect(() => {
     setOrigin(window.location.origin);
     fetchProject();
+    // Check if current user is admin
+    const adminId = process.env.NEXT_PUBLIC_ADMIN_USER_ID;
+    if (adminId) {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        setIsAdmin(user?.id === adminId);
+      });
+    }
   }, [projectId, fetchProject]);
 
   useEffect(() => {
@@ -187,7 +197,7 @@ export default function ProjectDetailsPage() {
   }, [projectId]);
 
   useEffect(() => {
-    if (activeTab === "redeemers" && !redeemers) {
+    if (activeTab === "redeemers" && !redeemers && isAdmin) {
       fetchRedeemers();
     }
   }, [activeTab, redeemers, fetchRedeemers]);
@@ -643,7 +653,7 @@ export default function ProjectDetailsPage() {
           >
             Share
           </button>
-          {project.retain_redeemer_email && (
+          {isAdmin && (
             <button
               onClick={() => setActiveTab("redeemers")}
               className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
@@ -974,7 +984,6 @@ export default function ProjectDetailsPage() {
               notify_on_batch_empty: project.notify_on_batch_empty ?? true,
               notify_on_milestones: project.notify_on_milestones ?? true,
               enable_bundles: project.enable_bundles ?? false,
-              retain_redeemer_email: project.retain_redeemer_email ?? false,
             }}
             onSaved={fetchProject}
           />
